@@ -14,7 +14,22 @@ jobs:
       - name: Locate Gradle project
         id: proj
         run: |
+          echo "== Repo files =="
+          find . -not -path './.git/*' -type f | head -n 80
           f=$(find . -name settings.gradle.kts -not -path './.git/*' | head -n 1)
+          if [ -z "$f" ]; then
+            z=$(find . -iname '*.zip' -not -path './.git/*' | head -n 1)
+            if [ -n "$z" ]; then
+              echo "No project found, extracting $z"
+              mkdir -p _unzipped
+              unzip -q -o "$z" -d _unzipped
+              f=$(find _unzipped -name settings.gradle.kts | head -n 1)
+            fi
+          fi
+          if [ -z "$f" ]; then
+            echo "::error::settings.gradle.kts not found. Upload the project files (app/, build.gradle.kts, settings.gradle.kts ...) to the repository."
+            exit 1
+          fi
           d=$(dirname "$f")
           echo "Project dir: $d"
           echo "dir=$d" >> "$GITHUB_OUTPUT"
